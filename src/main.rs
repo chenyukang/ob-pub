@@ -87,7 +87,16 @@ fn try_site(sites: &HashMap<String, String>, lines: &[&str]) -> String {
 fn try_title(lines: &[&str]) -> String {
     for l in lines {
         if l.trim().starts_with("#") {
-            return l.replace("#", "").trim().to_string();
+            let vec: Vec<&str> = l.split(" ").collect();
+            let elems: Vec<String> = vec
+                .iter()
+                .filter(|&x| x.trim().len() > 0)
+                .map(|f| f.trim().to_string())
+                .collect();
+            println!("{:?}", elems);
+            if elems.len() > 1 {
+                return elems[1..].join(" ").trim().to_string();
+            }
         }
     }
     return "".to_string();
@@ -227,5 +236,20 @@ mod tests {
         let lines = vec!["title: hello", "date: 2021-11-23 00:21:58"];
         assert_eq!(try_key(&lines, "title"), "hello");
         assert_eq!(try_key(&lines, "date"), "2021-11-23 00:21:58");
+    }
+
+    #[test]
+    fn test_try_title() {
+        let lines = vec!["title: hello", "### title world"];
+        assert_eq!(try_title(&lines), "title world");
+
+        let lines = vec!["title: hello", "### "];
+        assert_eq!(try_title(&lines), "");
+
+        let lines = vec!["title: hello", "### ", "# This good way"];
+        assert_eq!(try_title(&lines), "This good way");
+
+        let lines = vec!["title: hello", "### 你好，世界"];
+        assert_eq!(try_title(&lines), "你好，世界");
     }
 }
