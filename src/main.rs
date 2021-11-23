@@ -60,11 +60,14 @@ fn publish(conf: &Conf) {
 
 fn try_key(lines: &[&str], key: &str) -> String {
     for line in lines {
-        let elems = line.split(":").collect::<Vec<&str>>();
-        if elems.len() == 2 {
-            if elems[0].trim() == key {
-                return elems[1].trim().to_string();
-            }
+        let pos = line.find(":");
+        if pos.is_none() {
+            continue;
+        }
+        let k = &line[0..pos.unwrap()].trim();
+        let v = &line[pos.unwrap() + 1..].trim();
+        if *k == key {
+            return v.to_string();
         }
     }
     return "".to_string();
@@ -137,7 +140,7 @@ fn sync_posts(conf: &Conf) {
         let tags = try_key(meta, "pub_tags");
         let site = try_site(&conf.sites, meta);
         let title = try_title(meta);
-        //println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
+        println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
         if title == "" || site == "" || link == "" {
             continue;
         }
@@ -153,6 +156,7 @@ fn sync_posts(conf: &Conf) {
         if prev_content != "" {
             let lines = prev_content.lines().collect::<Vec<&str>>();
             let prev_time = try_key(&lines, "date");
+            //println!("prev_time: {:?}", prev_time);
             time_str = prev_time.clone();
         }
         let hexo_meta = format!(
@@ -198,13 +202,23 @@ fn main() {
         conf.sites.insert(key.to_string(), value.to_string());
     }
 
-    println!("conf: {:?}", conf);
-
     if matches.is_present("sync") {
         sync_posts(&conf);
     }
 
     if matches.is_present("publish") {
         publish(&conf);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_try_key() {
+        let lines = vec!["title: hello", "date: 2021-11-23 00:21:58"];
+        assert_eq!(try_key(&lines, "title"), "hello");
+        assert_eq!(try_key(&lines, "date"), "2021-11-23 00:21:58");
     }
 }
