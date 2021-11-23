@@ -93,7 +93,7 @@ fn try_title(lines: &[&str]) -> String {
     return "".to_string();
 }
 
-fn process_images(lines: &[&str], hexo_target: &str) -> String {
+fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, String)>) -> String {
     let mut res = vec![];
     for line in lines {
         let s = line.trim();
@@ -102,8 +102,8 @@ fn process_images(lines: &[&str], hexo_target: &str) -> String {
             let img = format!("./Pics/{}", f);
             let new_file_name = format!("/images/ob_{}", f.replace(" ", "_"));
             let target = format!("{}/source{}", hexo_target, new_file_name);
-            println!("img: {} => {}", img, target);
-            fs::copy(img, target).unwrap();
+            //println!("img: {} => {}", img, target);
+            files.push((img, target));
             let l = format!("![{}]({})", &new_file_name, &new_file_name);
             res.push(l);
         } else {
@@ -165,13 +165,19 @@ fn sync_posts(conf: &Conf) {
         );
         //println!("hexo_meta: {}", hexo_meta);
 
-        let hexo_body = process_images(body, &hexo_target);
+        let mut files = vec![];
+        let hexo_body = process_images(body, &hexo_target, &mut files);
         let content = format!("{}\n---\n{}", hexo_meta, hexo_body);
 
         println!("path: {}", path);
         if prev_content == content {
             println!("no change: {:?}", path);
         } else {
+            for file in files {
+                let (src, dst) = file;
+                println!("copy: {:?} => {:?}", src, dst);
+                fs::copy(src, dst).unwrap();
+            }
             println!("publish: {:?}", path);
             fs::write(path, content).unwrap();
         }
@@ -191,6 +197,7 @@ fn main() {
         sites: HashMap::new(),
     };
 
+    git_pull("./");
     let conf_file = fs::read_to_string(Path::new("./Pub/config.md")).unwrap();
     for line in conf_file.lines() {
         let elems = line.split(":").collect::<Vec<&str>>();
