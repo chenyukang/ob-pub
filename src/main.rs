@@ -137,29 +137,40 @@ fn sync_posts(conf: &Conf) {
         let tags = try_key(meta, "pub_tags");
         let site = try_site(&conf.sites, meta);
         let title = try_title(meta);
-        println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
+        //println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
         if title == "" || site == "" || link == "" {
             continue;
         }
-        println!("publish: {:?}", file);
+        //println!("publish: {:?}", file);
+
+        let hexo_target = &conf.sites[&site];
+        let path = format!("{}/source/_posts/{}.md", &hexo_target, link);
 
         let time: DateTime<Tz> = Utc::now().with_timezone(&Tz::Asia__Chongqing);
-        let time_str = time.format("%Y-%m-%d %H:%M:%S");
-        println!("time: {}", time_str);
+        let mut time_str = time.format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let prev_content = fs::read_to_string(Path::new(&path)).unwrap_or(String::default());
+        if prev_content != "" {
+            let lines = prev_content.lines().collect::<Vec<&str>>();
+            let prev_time = try_key(&lines, "date");
+            time_str = prev_time.clone();
+        }
         let hexo_meta = format!(
             "---\nlayout: post\ntitle: {}\ndate: {}\ntags: [{}]\n",
             title, time_str, tags
         );
-        println!("hexo_meta: {}", hexo_meta);
+        //println!("hexo_meta: {}", hexo_meta);
 
-        let hexo_target = &conf.sites[&site];
         let hexo_body = process_images(body, &hexo_target);
-
         let content = format!("{}\n---\n{}", hexo_meta, hexo_body);
-        let path = format!("{}/source/_posts/{}.md", &hexo_target, link);
+
         println!("path: {}", path);
-        //println!("content:\n{}", content);
-        fs::write(path, content).unwrap();
+        if prev_content == content {
+            println!("no change: {:?}", path);
+        } else {
+            println!("publish: {:?}", path);
+            fs::write(path, content).unwrap();
+        }
     }
 }
 
