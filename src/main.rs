@@ -16,11 +16,11 @@ use std::process::Command;
 pub fn git_pull(dir: &str) {
     let child = Command::new("git")
         .current_dir(dir)
-        .args(&["pull", "origin", "main", "--rebase"])
+        .args(&["pull", "--rebase"])
         .spawn()
         .expect("failed to execute child");
-    let output = child.wait_with_output().expect("failed to wait on child");
-    println!("{:?}", output);
+    let _output = child.wait_with_output().expect("failed to wait on child");
+    //println!("{:?}", _output);
 }
 
 pub fn git_sync(dir: &str) {
@@ -29,8 +29,8 @@ pub fn git_sync(dir: &str) {
         .args(&["add", "."])
         .spawn()
         .expect("failed to execute child");
-    let output = child.wait_with_output().expect("failed to wait on child");
-    println!("{:?}", output);
+    let _output = child.wait_with_output().expect("failed to wait on child");
+    //println!("{:?}", output);
 
     let child = Command::new("git")
         .current_dir(dir)
@@ -47,7 +47,7 @@ pub fn git_sync(dir: &str) {
         .args(&["push"])
         .spawn()
         .expect("failed to execute child");
-    let output = child.wait_with_output().expect("failed to wait on child");
+    let _output = child.wait_with_output().expect("failed to wait on child");
     println!("{:?}", output);
 }
 
