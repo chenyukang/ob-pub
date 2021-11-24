@@ -93,7 +93,6 @@ fn try_title(lines: &[&str]) -> String {
                 .filter(|&x| x.trim().len() > 0)
                 .map(|f| f.trim().to_string())
                 .collect();
-            println!("{:?}", elems);
             if elems.len() > 1 {
                 return elems[1..].join(" ").trim().to_string();
             }
@@ -169,7 +168,7 @@ fn sync_posts(conf: &Conf) {
             time_str = prev_time.clone();
         }
         let hexo_meta = format!(
-            "---\nlayout: post\ntitle: {}\ndate: {}\ntags: [{}]\n",
+            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: [{}]\n",
             title, time_str, tags
         );
         //println!("hexo_meta: {}", hexo_meta);
@@ -213,9 +212,10 @@ fn main() {
         if elems.len() != 2 {
             continue;
         }
-        let key = elems[0].trim();
-        let value = elems[1].trim();
-        conf.sites.insert(key.to_string(), value.to_string());
+        let from = elems[0].trim();
+        let target = elems[1].trim();
+        git_pull(&target);
+        conf.sites.insert(from.to_string(), target.to_string());
     }
 
     if matches.is_present("sync") {
