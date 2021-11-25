@@ -148,7 +148,7 @@ fn sync_posts(conf: &Conf) {
         let tags = try_key(meta, "pub_tags");
         let site = try_site(&conf.sites, meta);
         let title = try_title(meta);
-        println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
+        //println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
         if title == "" || site == "" || link == "" {
             continue;
         }
@@ -177,9 +177,10 @@ fn sync_posts(conf: &Conf) {
         let hexo_body = process_images(body, &hexo_target, &mut files);
         let content = format!("{}\n---\n{}", hexo_meta, hexo_body);
 
-        println!("path: {}", path);
         if prev_content == content {
-            println!("no change: {:?}", path);
+            continue;
+            //println!("path: {}", path);
+            //println!("no change: {:?}", path);
         } else {
             for file in files {
                 let (src, dst) = file;
