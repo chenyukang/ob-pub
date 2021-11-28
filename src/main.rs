@@ -125,6 +125,7 @@ fn sync_posts(conf: &Conf) {
     println!("conf: {:?}", conf);
     let mut files = vec![];
     for entry in glob("./Pub/**/*.md").expect("failed") {
+        println!("entry: {:?}", entry);
         match entry {
             Ok(path) => {
                 files.push(format!("{}", path.display()));
