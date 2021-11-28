@@ -214,7 +214,8 @@ fn main() {
         conf.sites.insert(name.to_string(), target.to_string());
     }
 
-    let conf_file = fs::read_to_string(Path::new("./Pub/config.md")).unwrap();
+    let default_conf = "./Pub/config.md";
+    let conf_file = fs::read_to_string(Path::new(default_conf)).unwrap_or_default();
     for line in conf_file.lines() {
         let elems = line.split(":").collect::<Vec<&str>>();
         if elems.len() != 2 {
@@ -222,7 +223,6 @@ fn main() {
         }
         let from = elems[0].trim();
         let target = elems[1].trim();
-        git_pull(&target);
         conf.sites.insert(from.to_string(), target.to_string());
     }
 
