@@ -199,12 +199,20 @@ fn main() {
         .author("yukang <moorekang@gmail.com>")
         .about("Publish Obsidian to Hexo")
         .arg("-s, --sync     'Sync posts in Obsidian into Hexo'")
-        .arg("-p, --publish    'Remove all the pages for a feed'")
+        .arg("-p, --publish  'Remove all the pages for a feed'")
+        .arg("-n, --name=[NAME] 'Site name'")
+        .arg("-t, --target=[TARGET] 'Site directory'")
         .get_matches();
 
     let mut conf = Conf {
         sites: HashMap::new(),
     };
+
+    let name = matches.value_of("name").unwrap_or("");
+    let target = matches.value_of("target").unwrap_or("");
+    if name != "" && target != "" {
+        conf.sites.insert(name.to_string(), target.to_string());
+    }
 
     git_pull("./");
     let conf_file = fs::read_to_string(Path::new("./Pub/config.md")).unwrap();
@@ -217,6 +225,11 @@ fn main() {
         let target = elems[1].trim();
         git_pull(&target);
         conf.sites.insert(from.to_string(), target.to_string());
+    }
+
+    if conf.sites.is_empty() {
+        println!("No site configured");
+        return;
     }
 
     if matches.is_present("sync") {
