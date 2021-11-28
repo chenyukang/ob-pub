@@ -214,7 +214,6 @@ fn main() {
         conf.sites.insert(name.to_string(), target.to_string());
     }
 
-    git_pull("./");
     let conf_file = fs::read_to_string(Path::new("./Pub/config.md")).unwrap();
     for line in conf_file.lines() {
         let elems = line.split(":").collect::<Vec<&str>>();
@@ -230,6 +229,12 @@ fn main() {
     if conf.sites.is_empty() {
         println!("No site configured");
         return;
+    }
+
+    git_pull("./");
+    for (k, v) in &conf.sites {
+        println!("update site {} at {}:", k, v);
+        git_pull(v);
     }
 
     if matches.is_present("sync") {
