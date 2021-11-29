@@ -105,10 +105,20 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
     let mut res = vec![];
     for line in lines {
         let s = line.trim();
+        let mut f = "".to_string();
+        let mut new_file_name = "".to_string();
         if s.starts_with("![[") && s.ends_with("]]") {
-            let f = s.replace("![[", "").replace("]]", "");
+            f = s.replace("![[", "").replace("]]", "");
+            new_file_name = format!("/images/ob_{}", f.replace(" ", "_"));
+        } else if s.starts_with("![") && s.ends_with(")") {
+            let pos = s.find("(");
+            if pos.is_some() {
+                f = s[pos.unwrap() + 1..s.len() - 2].trim().to_string();
+                new_file_name = format!("/images/ob_{}", f.replace(" ", "_"));
+            }
+        }
+        if f != "" && new_file_name != "" {
             let img = format!("./Pics/{}", f);
-            let new_file_name = format!("/images/ob_{}", f.replace(" ", "_"));
             let target = format!("{}/source{}", hexo_target, new_file_name);
             //println!("img: {} => {}", img, target);
             files.push((img, target));
