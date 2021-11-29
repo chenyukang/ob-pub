@@ -113,7 +113,13 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
         } else if s.starts_with("![") && s.ends_with(")") {
             let pos = s.find("(");
             if pos.is_some() {
-                f = s[pos.unwrap() + 1..s.len() - 2].trim().to_string();
+                let t = s[pos.unwrap() + 1..s.len() - 1].trim().to_string();
+                f = t
+                    .split("/")
+                    .collect::<Vec<&str>>()
+                    .last()
+                    .unwrap_or(&"")
+                    .to_string();
                 new_file_name = format!("/images/ob_{}", f.replace(" ", "_"));
             }
         }
@@ -281,5 +287,31 @@ mod tests {
 
         let lines = vec!["title: hello", "### 你好，世界"];
         assert_eq!(try_title(&lines), "你好，世界");
+    }
+
+    #[test]
+    fn test_images() {
+        let lines = vec![
+            "![](/Pics/2021-11-29-16-37-14-demo1.png)",
+            "![](/Pics/2021-11-29-16-37-14-demo2.png)",
+        ];
+        let mut files1 = vec![];
+        let res1 = process_images(&lines, "./blog/directory", &mut files1);
+        assert_eq!(files1.len(), 2);
+        /* println!("{:?}", files1);
+        println!("{}", res1); */
+
+        let lines = vec![
+            "![[2021-11-29-16-37-14-demo1.png]]",
+            "![[2021-11-29-16-37-14-demo2.png]]",
+        ];
+        let mut files2 = vec![];
+        let res2 = process_images(&lines, "./blog/directory", &mut files2);
+        assert_eq!(files2.len(), 2);
+        /*   println!("{:?}", files2);
+        println!("{}", res2); */
+
+        assert_eq!(files1, files2);
+        assert_eq!(res1, res2);
     }
 }
