@@ -109,7 +109,7 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
         let mut new_file_name = "".to_string();
         if s.starts_with("![[") && s.ends_with("]]") {
             f = s.replace("![[", "").replace("]]", "");
-            new_file_name = format!("/images/ob_{}", f.replace(" ", "_"));
+            new_file_name = format!("/images/ob_{}", f.replace(" ", "-"));
         } else if s.starts_with("![") && s.ends_with(")") {
             let pos = s.find("(");
             if pos.is_some() {
@@ -120,15 +120,16 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
                     .last()
                     .unwrap_or(&"")
                     .to_string();
-                new_file_name = format!("/images/ob_{}", f.replace(" ", "_"));
+                new_file_name = format!("/images/ob_{}", f.replace(" ", "-"));
             }
         }
         if f != "" && new_file_name != "" {
             let img = format!("./Pics/{}", f);
-            let target = format!("{}/source{}", hexo_target, new_file_name);
+            let image_name = new_file_name.to_lowercase();
+            let target = format!("{}/source{}", hexo_target, image_name);
             //println!("img: {} => {}", img, target);
             files.push((img, target));
-            let l = format!("![{}]({})", &new_file_name, &new_file_name);
+            let l = format!("![{}]({})", &image_name, &image_name);
             res.push(l);
         } else {
             res.push(line.to_string());
