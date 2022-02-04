@@ -106,9 +106,17 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
     for line in lines {
         let s = line.trim();
         let mut f = "".to_string();
+        let mut alt = "".to_string();
         let mut new_file_name = "".to_string();
         if s.starts_with("![[") && s.ends_with("]]") {
-            f = s.replace("![[", "").replace("]]", "");
+            let file = s.replace("![[", "").replace("]]", "");
+            if file.contains("|") {
+                let v: Vec<&str> = file.split("|").collect();
+                f = v[0].trim().to_string();
+                alt = v[1].trim().to_string();
+            } else {
+                f = file.clone();
+            }
             new_file_name = format!("/images/ob_{}", f.replace(" ", "-"));
         } else if s.starts_with("![") && s.ends_with(")") {
             let pos = s.find("(");
@@ -129,7 +137,7 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
             let target = format!("{}/source{}", hexo_target, image_name);
             //println!("img: {} => {}", img, target);
             files.push((img, target));
-            let l = format!("![{}]({})", &image_name, &image_name);
+            let l = format!("![{}]({})", &alt, &image_name);
             res.push(l);
         } else {
             res.push(line.to_string());
