@@ -193,9 +193,15 @@ fn sync_posts(conf: &Conf) {
             //println!("prev_time: {:?}", prev_time);
             time_str = prev_time.clone();
         }
+        let strip_tags = tags.replace("，", ",");
+        let tags_elems = strip_tags.split(",").collect::<Vec<&str>>();
+        let mut tags_str = "".to_string();
+        for t in tags_elems {
+            tags_str.push_str(&format!("- {}\n", t));
+        }
         let hexo_meta = format!(
-            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: [{}]\n",
-            title, time_str, tags
+            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n[{}]\n",
+            title, time_str, tags_str
         );
         //println!("hexo_meta: {}", hexo_meta);
 
