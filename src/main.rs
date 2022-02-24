@@ -197,7 +197,7 @@ fn sync_posts(conf: &Conf) {
         let tags_elems = strip_tags.split(",").collect::<Vec<&str>>();
         let mut tags_str = "".to_string();
         for t in tags_elems {
-            tags_str.push_str(&format!("- {}\n", t));
+            tags_str.push_str(&format!("- {}\n", t.trim()));
         }
         let hexo_meta = format!(
             "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n{}\n",
