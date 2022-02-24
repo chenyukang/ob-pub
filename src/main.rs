@@ -200,7 +200,7 @@ fn sync_posts(conf: &Conf) {
             tags_str.push_str(&format!("- {}\n", t));
         }
         let hexo_meta = format!(
-            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n[{}]\n",
+            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n{}\n",
             title, time_str, tags_str
         );
         //println!("hexo_meta: {}", hexo_meta);
