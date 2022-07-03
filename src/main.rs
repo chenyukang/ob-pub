@@ -172,16 +172,21 @@ fn sync_posts(conf: &Conf) {
         let meta = &lines[..index];
         let link = try_key(meta, "pub_link");
         let tags = try_key(meta, "pub_tags");
+        let meta_path = try_key(meta, "pub_path");
         let site = try_site(&conf.sites, meta);
         let title = try_title(meta);
         //println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
-        if title == "" || site == "" || link == "" {
+        if title == "" || site == "" || (link == "" && meta_path == "") {
             continue;
         }
         //println!("publish: {:?}", file);
 
         let hexo_target = &conf.sites[&site];
-        let path = format!("{}/source/_posts/{}.md", &hexo_target, link);
+        let path = if meta_path != "" {
+            format!("{}/{}", &hexo_target, meta_path)
+        } else {
+            format!("{}/source/_posts/{}.md", &hexo_target, link)
+        };
 
         let time: DateTime<Tz> = Utc::now().with_timezone(&Tz::Asia__Chongqing);
         let mut time_str = time.format("%Y-%m-%d %H:%M:%S").to_string();
@@ -207,7 +212,12 @@ fn sync_posts(conf: &Conf) {
 
         let mut files = vec![];
         let hexo_body = process_images(body, &hexo_target, &mut files);
-        let content = format!("{}\n---\n{}", hexo_meta, hexo_body);
+        let content = 
+        if meta_path != "" {
+            hexo_body
+        } else {
+            format!("{}\n---\n{}", hexo_meta, hexo_body)
+        };
 
         if prev_content == content {
             continue;
