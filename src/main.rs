@@ -172,6 +172,8 @@ fn sync_posts(conf: &Conf) {
         let meta = &lines[..index];
         let link = try_key(meta, "pub_link");
         let tags = try_key(meta, "pub_tags");
+        let gen_cover = try_key(meta, "gen_cover");
+        let subtitle = try_key(meta, "subtitle");
         let site = try_site(&conf.sites, meta);
         let title = try_title(meta);
         //println!("link: {:?}\nsite: {:?}\ntitle: {:?}\n", link, site, title);
@@ -199,9 +201,19 @@ fn sync_posts(conf: &Conf) {
         for t in tags_elems {
             tags_str.push_str(&format!("- {}\n", t.trim()));
         }
+        let gen_cover_str = if gen_cover == "" {
+                "".to_string()
+            } else {
+                format!("\ngen_cover: {}", gen_cover)
+            };
+        let subtitle_str = if subtitle == "" {
+                "".to_string()
+            } else {
+                format!("\nsubtitle: {}", subtitle)
+            };
         let hexo_meta = format!(
-            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n{}\n",
-            title, time_str, tags_str
+            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n{}\n{}{}\n",
+            title, time_str, tags_str, gen_cover_str, subtitle_str
         );
         //println!("hexo_meta: {}", hexo_meta);
 
