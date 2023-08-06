@@ -41,10 +41,7 @@ pub fn git_sync(dir: &str) {
         .args(&["commit", "-am'ob-web'"])
         .spawn()
         .expect("failed to execute child");
-    let output = child.wait_with_output().expect("failed to wait on child");
-    if !output.status.success() {
-        panic!("git commit failed: {:?}", output);
-    }
+    let _output = child.wait_with_output().expect("failed to wait on child");
 
     git_pull(dir);
 
