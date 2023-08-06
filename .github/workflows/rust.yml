@@ -21,8 +21,6 @@ jobs:
     - name: Run tests
       run: cargo test -- --nocapture
 
-
-jobs:
   release:
     name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
