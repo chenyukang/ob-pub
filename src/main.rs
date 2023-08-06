@@ -224,7 +224,7 @@ fn sync_posts(conf: &Conf) {
 
         let mut files = vec![];
         let hexo_body = process_images(body, &hexo_target, &mut files);
-        let content = 
+        let content =
         if meta_path != "" {
             hexo_body
         } else {
@@ -285,7 +285,7 @@ fn main() {
         return;
     }
 
-    git_pull("./");
+    //git_pull("./");
     for (k, v) in &conf.sites {
         println!("update site {} at {}:", k, v);
         git_pull(v);
