@@ -19,8 +19,10 @@ pub fn git_pull(dir: &str) {
         .args(&["pull", "--rebase"])
         .spawn()
         .expect("failed to execute child");
-    let _output = child.wait_with_output().expect("failed to wait on child");
-    //println!("{:?}", _output);
+    let output = child.wait_with_output().expect("failed to wait on child");
+    if !output.status.success() {
+        panic!("git pull failed: {:?}", output);
+    }
 }
 
 pub fn git_sync(dir: &str) {
@@ -29,8 +31,10 @@ pub fn git_sync(dir: &str) {
         .args(&["add", "."])
         .spawn()
         .expect("failed to execute child");
-    let _output = child.wait_with_output().expect("failed to wait on child");
-    //println!("{:?}", output);
+    let output = child.wait_with_output().expect("failed to wait on child");
+    if !output.status.success() {
+        panic!("git pull failed: {:?}", output);
+    }
 
     let child = Command::new("git")
         .current_dir(dir)
@@ -38,7 +42,9 @@ pub fn git_sync(dir: &str) {
         .spawn()
         .expect("failed to execute child");
     let output = child.wait_with_output().expect("failed to wait on child");
-    println!("{:?}", output);
+    if !output.status.success() {
+        panic!("git commit failed: {:?}", output);
+    }
 
     git_pull(dir);
 
@@ -47,8 +53,10 @@ pub fn git_sync(dir: &str) {
         .args(&["push"])
         .spawn()
         .expect("failed to execute child");
-    let _output = child.wait_with_output().expect("failed to wait on child");
-    println!("{:?}", output);
+    let output = child.wait_with_output().expect("failed to wait on child");
+    if !output.status.success() {
+        panic!("git push failed: {:?}", output);
+    }
 }
 
 fn publish(conf: &Conf) {
