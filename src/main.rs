@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs};
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use clap::App;
+use clap::{App, Arg};
 use glob::glob;
 use std::path::Path;
 
@@ -212,15 +212,15 @@ fn sync_posts(conf: &Conf) {
             tags_str.push_str(&format!("- {}\n", t.trim()));
         }
         let gen_cover_str = if gen_cover == "" {
-                "".to_string()
-            } else {
-                format!("\ngen_cover: {}", gen_cover)
-            };
+            "".to_string()
+        } else {
+            format!("\ngen_cover: {}", gen_cover)
+        };
         let subtitle_str = if subtitle == "" {
-                "".to_string()
-            } else {
-                format!("\nsubtitle: {}", subtitle)
-            };
+            "".to_string()
+        } else {
+            format!("\nsubtitle: {}", subtitle)
+        };
         let hexo_meta = format!(
             "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n{}\n{}{}\n",
             title, time_str, tags_str, gen_cover_str, subtitle_str
@@ -229,8 +229,7 @@ fn sync_posts(conf: &Conf) {
 
         let mut files = vec![];
         let hexo_body = process_images(body, &hexo_target, &mut files);
-        let content =
-        if meta_path != "" {
+        let content = if meta_path != "" {
             hexo_body
         } else {
             format!("{}\n---\n{}", hexo_meta, hexo_body)
@@ -257,10 +256,32 @@ fn main() {
         .version("0.1")
         .author("yukang <moorekang@gmail.com>")
         .about("Publish Obsidian to Hexo")
-        .arg("-s, --sync     'Sync posts in Obsidian into Hexo'")
-        .arg("-p, --publish  'Remove all the pages for a feed'")
-        .arg("-n, --name=[NAME] 'Site name'")
-        .arg("-t, --target=[TARGET] 'Site directory'")
+        .arg(
+            Arg::new("sync")
+                .short('s')
+                .long("sync")
+                .help("Sync posts in Obsidian into Hexo"),
+        )
+        .arg(
+            Arg::new("publish")
+                .short('p')
+                .long("publish")
+                .help("Publish all the pages for a feed"),
+        )
+        .arg(
+            Arg::new("name")
+                .short('n')
+                .long("name")
+                .takes_value(true)
+                .help("Site name"),
+        )
+        .arg(
+            Arg::new("target")
+                .short('t')
+                .long("target")
+                .takes_value(true)
+                .help("Site directory"),
+        )
         .get_matches();
 
     let mut conf = Conf {
@@ -290,17 +311,20 @@ fn main() {
         return;
     }
 
-    //git_pull("./");
-    for (k, v) in &conf.sites {
-        println!("update site {} at {}:", k, v);
-        git_pull(v);
+    let is_publish = matches.is_present("publish");
+    if is_publish {
+        git_pull("./");
+        for (k, v) in &conf.sites {
+            println!("update site {} at {}:", k, v);
+            git_pull(v);
+        }
     }
 
     if matches.is_present("sync") {
         sync_posts(&conf);
     }
 
-    if matches.is_present("publish") {
+    if is_publish {
         publish(&conf);
     }
 }
