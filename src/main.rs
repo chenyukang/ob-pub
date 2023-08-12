@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs};
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use clap::{App, Arg};
+use clap::{value_parser, Arg, Command as App};
 use glob::glob;
 use std::path::Path;
 
@@ -260,26 +260,30 @@ fn main() {
             Arg::new("sync")
                 .short('s')
                 .long("sync")
+                .action(clap::ArgAction::SetTrue)
                 .help("Sync posts in Obsidian into Hexo"),
         )
         .arg(
             Arg::new("publish")
                 .short('p')
                 .long("publish")
+                .action(clap::ArgAction::SetTrue)
                 .help("Publish all the pages for a feed"),
         )
         .arg(
             Arg::new("name")
                 .short('n')
                 .long("name")
-                .takes_value(true)
+                .value_parser(value_parser!(String))
+                .action(clap::ArgAction::Set)
                 .help("Site name"),
         )
         .arg(
             Arg::new("target")
                 .short('t')
                 .long("target")
-                .takes_value(true)
+                .value_parser(value_parser!(String))
+                .action(clap::ArgAction::Set)
                 .help("Site directory"),
         )
         .get_matches();
@@ -288,10 +292,11 @@ fn main() {
         sites: HashMap::new(),
     };
 
-    let name = matches.value_of("name").unwrap_or("");
-    let target = matches.value_of("target").unwrap_or("");
-    if name != "" && target != "" {
-        conf.sites.insert(name.to_string(), target.to_string());
+    let name: Option<&String> = matches.get_one("name");
+    let target: Option<&String> = matches.get_one("target");
+    if name.is_some() && target.is_some() {
+        conf.sites
+            .insert(name.unwrap().to_string(), target.unwrap().to_string());
     }
 
     let default_conf = "./Pub/config.md";
@@ -311,7 +316,7 @@ fn main() {
         return;
     }
 
-    let is_publish = matches.is_present("publish");
+    let is_publish = matches.get_flag("publish");
     if is_publish {
         git_pull("./");
         for (k, v) in &conf.sites {
@@ -320,7 +325,7 @@ fn main() {
         }
     }
 
-    if matches.is_present("sync") {
+    if matches.get_flag("sync") {
         sync_posts(&conf);
     }
 
