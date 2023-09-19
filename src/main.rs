@@ -38,7 +38,7 @@ pub fn git_sync(dir: &str) {
 
     let child = Command::new("git")
         .current_dir(dir)
-        .args(&["commit", "-am'ob-web'"])
+        .args(&["commit", "-am'ob-pub auto sync'"])
         .spawn()
         .expect("failed to execute child");
     let _output = child.wait_with_output().expect("failed to wait on child");
