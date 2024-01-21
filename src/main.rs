@@ -299,18 +299,6 @@ fn main() {
             .insert(name.unwrap().to_string(), target.unwrap().to_string());
     }
 
-    let default_conf = "./Pub/config.md";
-    let conf_file = fs::read_to_string(Path::new(default_conf)).unwrap_or_default();
-    for line in conf_file.lines() {
-        let elems = line.split(":").collect::<Vec<&str>>();
-        if elems.len() != 2 {
-            continue;
-        }
-        let from = elems[0].trim();
-        let target = elems[1].trim();
-        conf.sites.insert(from.to_string(), target.to_string());
-    }
-
     if conf.sites.is_empty() {
         println!("No site configured");
         return;
@@ -318,7 +306,6 @@ fn main() {
 
     let is_publish = matches.get_flag("publish");
     if is_publish {
-        git_pull("./");
         for (k, v) in &conf.sites {
             println!("update site {} at {}:", k, v);
             git_pull(v);
