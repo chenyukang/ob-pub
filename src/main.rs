@@ -118,7 +118,13 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
             if file.contains("|") {
                 let v: Vec<&str> = file.split("|").collect();
                 f = v[0].trim().to_string();
-                alt = v[1].trim().to_string();
+                for i in 1..v.len() {
+                    let text = v[i].trim();
+                    // if text start with non digit, it is alt text
+                    if !text.chars().next().unwrap_or_default().is_digit(10) {
+                        alt = text.to_string();
+                    }
+                }
             } else {
                 f = file.clone();
             }
