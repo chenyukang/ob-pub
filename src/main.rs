@@ -106,6 +106,21 @@ fn try_title(lines: &[&str]) -> String {
     return "".to_string();
 }
 
+fn parse_percent_width(text: &str) -> Option<String> {
+    let value = text.trim().strip_suffix('%')?.trim();
+    if value.is_empty() || value.parse::<f32>().is_err() {
+        return None;
+    }
+    Some(format!("{}%", value))
+}
+
+fn html_escape_attr(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('"', "&quot;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
 fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, String)>) -> String {
     let mut res = vec![];
     for line in lines {
@@ -113,15 +128,19 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
         let mut f = "".to_string();
         let mut alt = "".to_string();
         let mut new_file_name = "".to_string();
+        let mut percent_width = None;
         if s.starts_with("![[") && s.ends_with("]]") {
             let file = s.replace("![[", "").replace("]]", "");
             if file.contains("|") {
                 let v: Vec<&str> = file.split("|").collect();
                 f = v[0].trim().to_string();
-                for i in 1..v.len() {
-                    let text = v[i].trim();
+                for text in v.iter().skip(1).map(|part| part.trim()) {
+                    if let Some(width) = parse_percent_width(text) {
+                        percent_width = Some(width);
+                        continue;
+                    }
                     // if text start with non digit, it is alt text
-                    if !text.chars().next().unwrap_or_default().is_digit(10) {
+                    if !text.chars().next().unwrap_or_default().is_ascii_digit() {
                         alt = text.to_string();
                     }
                 }
@@ -148,7 +167,16 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
             let target = format!("{}/source{}", hexo_target, image_name);
             //println!("img: {} => {}", img, target);
             files.push((img, target));
-            let l = format!("![{}]({})", &alt, &image_name);
+            let l = if let Some(width) = percent_width {
+                format!(
+                    "<img src=\"{}\" alt=\"{}\" style=\"width:{}; height:auto;\" />",
+                    &image_name,
+                    html_escape_attr(&alt),
+                    width
+                )
+            } else {
+                format!("![{}]({})", &alt, &image_name)
+            };
             res.push(l);
         } else {
             res.push(line.to_string());
@@ -383,5 +411,33 @@ mod tests {
 
         assert_eq!(files1, files2);
         assert_eq!(res1, res2);
+    }
+
+    #[test]
+    fn test_image_percent_width() {
+        let lines = vec!["![[Pasted image 20260622213133.png|40%|300]]"];
+        let mut files = vec![];
+        let res = process_images(&lines, "./blog/directory", &mut files);
+
+        assert_eq!(
+            files,
+            vec![(
+                "./Pics/Pasted image 20260622213133.png".to_string(),
+                "./blog/directory/source/images/ob_pasted-image-20260622213133.png".to_string(),
+            )]
+        );
+        assert_eq!(
+            res,
+            "<img src=\"/images/ob_pasted-image-20260622213133.png\" alt=\"\" style=\"width:40%; height:auto;\" />"
+        );
+    }
+
+    #[test]
+    fn test_image_pixel_width_keeps_existing_output() {
+        let lines = vec!["![[Pasted image 20260622213133.png|300]]"];
+        let mut files = vec![];
+        let res = process_images(&lines, "./blog/directory", &mut files);
+
+        assert_eq!(res, "![](/images/ob_pasted-image-20260622213133.png)");
     }
 }
