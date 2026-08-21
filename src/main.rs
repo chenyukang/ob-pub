@@ -185,6 +185,57 @@ fn process_images(lines: &[&str], hexo_target: &str, files: &mut Vec<(String, St
     res.join("\n")
 }
 
+struct PostContent<'a> {
+    title: &'a str,
+    published: &'a str,
+    tags: &'a str,
+    gen_cover: &'a str,
+    subtitle: &'a str,
+    math: &'a str,
+    body: &'a str,
+}
+
+impl PostContent<'_> {
+    fn render(&self, updated: Option<&str>) -> String {
+        let updated = updated
+            .map(|value| format!("\nupdated: {}", value))
+            .unwrap_or_default();
+        let hexo_meta = format!(
+            "---\nlayout: post\ntitle: '{}'\ndate: {}{}\ntags: \n{}\n{}{}{}\n",
+            self.title,
+            self.published,
+            updated,
+            self.tags,
+            self.gen_cover,
+            self.subtitle,
+            self.math
+        );
+        format!("{}\n---\n{}", hexo_meta, self.body)
+    }
+}
+
+fn next_post_content<F>(previous: &str, now: &str, render: F) -> Option<String>
+where
+    F: Fn(Option<&str>) -> String,
+{
+    let previous_lines = previous.lines().collect::<Vec<&str>>();
+    let previous_updated = try_key(&previous_lines, "updated");
+    let previous_updated = if previous_updated.is_empty() {
+        None
+    } else {
+        Some(previous_updated.as_str())
+    };
+    let candidate = render(previous_updated);
+
+    if previous == candidate {
+        None
+    } else if previous.is_empty() {
+        Some(candidate)
+    } else {
+        Some(render(Some(now)))
+    }
+}
+
 fn sync_posts(conf: &Conf) {
     println!("conf: {:?}", conf);
     let mut files = vec![];
@@ -230,8 +281,9 @@ fn sync_posts(conf: &Conf) {
             format!("{}/source/_posts/{}.md", &hexo_target, link)
         };
 
-        let time: DateTime<Tz> = Utc::now().with_timezone(&Tz::Asia__Chongqing);
-        let mut time_str = time.format("%Y-%m-%d %H:%M:%S").to_string();
+        let time: DateTime<Tz> = Utc::now().with_timezone(&Tz::Asia__Shanghai);
+        let now = time.format("%Y-%m-%d %H:%M:%S").to_string();
+        let mut time_str = now.clone();
 
         let prev_content = fs::read_to_string(Path::new(&path)).unwrap_or(String::default());
         if prev_content != "" {
@@ -261,25 +313,24 @@ fn sync_posts(conf: &Conf) {
         } else {
             format!("\nsubtitle: {}", subtitle)
         };
-        let hexo_meta = format!(
-            "---\nlayout: post\ntitle: '{}'\ndate: {}\ntags: \n{}\n{}{}{}\n",
-            title, time_str, tags_str, gen_cover_str, subtitle_str, math_str
-        );
-        //println!("hexo_meta: {}", hexo_meta);
-
         let mut files = vec![];
         let hexo_body = process_images(body, &hexo_target, &mut files);
-        let content = if meta_path != "" {
-            hexo_body
+        let content = if meta_path.is_empty() {
+            let post = PostContent {
+                title: &title,
+                published: &time_str,
+                tags: &tags_str,
+                gen_cover: &gen_cover_str,
+                subtitle: &subtitle_str,
+                math: &math_str,
+                body: &hexo_body,
+            };
+            next_post_content(&prev_content, &now, |updated| post.render(updated))
         } else {
-            format!("{}\n---\n{}", hexo_meta, hexo_body)
+            (prev_content != hexo_body).then_some(hexo_body)
         };
 
-        if prev_content == content {
-            continue;
-            //println!("path: {}", path);
-            //println!("no change: {:?}", path);
-        } else {
+        if let Some(content) = content {
             for file in files {
                 let (src, dst) = file;
                 println!("copy: {:?} => {:?}", src, dst);
@@ -439,5 +490,53 @@ mod tests {
         let res = process_images(&lines, "./blog/directory", &mut files);
 
         assert_eq!(res, "![](/images/ob_pasted-image-20260622213133.png)");
+    }
+
+    #[test]
+    fn test_updated_changes_only_after_an_existing_post_is_edited() {
+        let render = |body: &str, updated: Option<&str>| {
+            PostContent {
+                title: "Title",
+                published: "2026-08-21 12:46:23",
+                tags: "- Test\n",
+                gen_cover: "",
+                subtitle: "",
+                math: "",
+                body,
+            }
+            .render(updated)
+        };
+
+        let first = next_post_content("", "2026-08-21 18:20:00", |updated| {
+            render("first version", updated)
+        })
+        .unwrap();
+        assert!(!first.contains("updated:"));
+
+        assert!(next_post_content(&first, "2026-08-21 18:21:00", |updated| {
+            render("first version", updated)
+        })
+        .is_none());
+
+        let edited = next_post_content(&first, "2026-08-21 18:22:00", |updated| {
+            render("second version", updated)
+        })
+        .unwrap();
+        assert!(edited.contains("updated: 2026-08-21 18:22:00"));
+        assert!(edited.contains("date: 2026-08-21 12:46:23"));
+
+        assert!(
+            next_post_content(&edited, "2026-08-21 18:23:00", |updated| {
+                render("second version", updated)
+            })
+            .is_none()
+        );
+
+        let edited_again = next_post_content(&edited, "2026-08-21 18:24:00", |updated| {
+            render("third version", updated)
+        })
+        .unwrap();
+        assert!(edited_again.contains("updated: 2026-08-21 18:24:00"));
+        assert!(!edited_again.contains("updated: 2026-08-21 18:22:00"));
     }
 }
